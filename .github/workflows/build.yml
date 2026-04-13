@@ -22,7 +22,6 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       build_matrix: ${{ steps.target.outputs.build_matrix }}
-      release_target: ${{ steps.target.outputs.release_target }}
     steps:
       - name: checkout repository
         uses: actions/checkout@v6
@@ -60,7 +59,6 @@ jobs:
           esac
 
           echo "build_matrix=${build_matrix}" >> "$GITHUB_OUTPUT"
-          echo "release_target=${default_target}" >> "$GITHUB_OUTPUT"
 
   precheck:
     runs-on: ubuntu-24.04
@@ -123,18 +121,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: setup jdk
-        uses: actions/setup-java@v5
-        with:
-          java-version: "25"
-          distribution: "microsoft"
-
-      - name: make gradle wrapper executable
-        run: chmod +x ./gradlew
-
-      - name: build release artifacts
-        run: ./gradlew build -PmcTarget=${{ needs.resolve-target.outputs.release_target }}
-
       - name: validate release metadata
         id: release_meta
         shell: bash
@@ -147,7 +133,7 @@ jobs:
           fi
 
           version="${tag}"
-          escaped_tag="$(printf '%s\n' "$tag" | sed -e 's/[][(){}.^$*+?|\\/]/\\\\&/g')"
+          escaped_tag="$(printf '%s\n' "$tag" | sed -e 's/[][(){}.^$*+?|\\/]/\\&/g')"
           actual_commit_subject="$(git log -1 --pretty=%s "${GITHUB_SHA}")"
           if ! printf '%s\n' "$actual_commit_subject" | grep -Eq "^release(\([^)]+\))?: v${escaped_tag}$"; then
             echo "Invalid release commit subject: ${actual_commit_subject}"
@@ -190,10 +176,17 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
+      - name: download build artifacts
+        uses: actions/download-artifact@v5
+        with:
+          pattern: Artifacts-mc*
+          path: release-artifacts
+          merge-multiple: true
+
       - name: create github release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ steps.release_meta.outputs.title }}
           body: ${{ steps.release_meta.outputs.notes }}
-          files: build/libs/*.jar
+          files: release-artifacts/*.jar
