@@ -21,10 +21,10 @@ jobs:
         run: |
           set -euo pipefail
           subject="$(git log -1 --pretty=%s "${GITHUB_SHA}")"
-          if [[ "$subject" == release:* ]]; then
+          if printf '%s\n' "$subject" | grep -Eq '^release(\([^)]+\))?: v[^[:space:]]+$'; then
             echo "is_release_commit=true" >> "$GITHUB_OUTPUT"
           else
-            echo "Latest commit subject does not start with 'release:', release job will be skipped."
+            echo "Latest commit subject does not match release format, release job will be skipped."
             echo "is_release_commit=false" >> "$GITHUB_OUTPUT"
           fi
 
@@ -80,18 +80,17 @@ jobs:
         run: |
           set -euo pipefail
           tag="${GITHUB_REF_NAME}"
-          if [[ ! "$tag" =~ ^([^+]+)\+(.+)$ ]]; then
-            echo "Invalid tag format: $tag (expected <version>+<branch>)"
+          if [[ -z "$tag" ]]; then
+            echo "Invalid tag format: empty tag name"
             exit 1
           fi
 
-          version="${BASH_REMATCH[1]}"
-          release_branch="${BASH_REMATCH[2]}"
-          expected_commit_subject="release: v${tag}"
+          version="${tag}"
+          escaped_tag="$(printf '%s\n' "$tag" | sed -e 's/[][(){}.^$*+?|\\/]/\\\\&/g')"
           actual_commit_subject="$(git log -1 --pretty=%s "${GITHUB_SHA}")"
-          if [[ "$actual_commit_subject" != "$expected_commit_subject" ]]; then
+          if ! printf '%s\n' "$actual_commit_subject" | grep -Eq "^release(\([^)]+\))?: v${escaped_tag}$"; then
             echo "Invalid release commit subject: ${actual_commit_subject}"
-            echo "Expected: ${expected_commit_subject}"
+            echo "Expected: release: v${tag} or release(<scope>): v${tag}"
             exit 1
           fi
 
@@ -105,8 +104,8 @@ jobs:
           fi
 
           git fetch origin --prune
-          if ! git branch -r --contains "${GITHUB_SHA}" | sed 's/^[*[:space:]]*//' | grep -qx "origin/${release_branch}"; then
-            echo "Tagged commit is not contained in expected branch: origin/${release_branch}"
+          if ! git branch -r --contains "${GITHUB_SHA}" | sed 's/^[*[:space:]]*//' | grep -qx "origin/main"; then
+            echo "Tagged commit is not contained in expected branch: origin/main"
             exit 1
           fi
 
@@ -125,7 +124,6 @@ jobs:
           {
             echo "title=v${tag}"
             echo "version=${version}"
-            echo "release_branch=${release_branch}"
             echo "notes<<EOF"
             cat release-notes.txt
             echo "EOF"
