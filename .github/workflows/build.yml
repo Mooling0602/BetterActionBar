@@ -1,12 +1,33 @@
-# Automatically build the project and run any configured tests for every push
-# and submitted pull request. This can help catch issues that only occur on
-# certain platforms or Java versions, and provides a first line of defence
-# against bad commits.
+name: ci-and-release
 
-name: build
-on: [pull_request, push]
+on:
+  push:
+    tags:
+      - '*+*'
 
 jobs:
+  precheck:
+    runs-on: ubuntu-24.04
+    outputs:
+      is_release_commit: ${{ steps.commit_check.outputs.is_release_commit }}
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - name: check latest commit subject
+        id: commit_check
+        shell: bash
+        run: |
+          set -euo pipefail
+          subject="$(git log -1 --pretty=%s "${GITHUB_SHA}")"
+          if [[ "$subject" == release:* ]]; then
+            echo "is_release_commit=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Latest commit subject does not start with 'release:', release job will be skipped."
+            echo "is_release_commit=false" >> "$GITHUB_OUTPUT"
+          fi
+
   build:
     runs-on: ubuntu-24.04
     steps:
@@ -28,3 +49,92 @@ jobs:
         with:
           name: Artifacts
           path: build/libs/
+
+  release:
+    needs: precheck
+    if: startsWith(github.ref, 'refs/tags/') && needs.precheck.outputs.is_release_commit == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: build release artifacts
+        run: ./gradlew build
+
+      - name: validate release metadata
+        id: release_meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          if [[ ! "$tag" =~ ^([^+]+)\+(.+)$ ]]; then
+            echo "Invalid tag format: $tag (expected <version>+<branch>)"
+            exit 1
+          fi
+
+          version="${BASH_REMATCH[1]}"
+          release_branch="${BASH_REMATCH[2]}"
+          expected_commit_subject="release: v${tag}"
+          actual_commit_subject="$(git log -1 --pretty=%s "${GITHUB_SHA}")"
+          if [[ "$actual_commit_subject" != "$expected_commit_subject" ]]; then
+            echo "Invalid release commit subject: ${actual_commit_subject}"
+            echo "Expected: ${expected_commit_subject}"
+            exit 1
+          fi
+
+          short_sha="$(git rev-parse --short=7 "${GITHUB_SHA}")"
+          expected_tag_message="commit ${short_sha}"
+          actual_tag_message="$(git for-each-ref "refs/tags/${tag}" --format='%(contents)' | head -n1)"
+          if [[ "$actual_tag_message" != "$expected_tag_message" ]]; then
+            echo "Invalid tag annotation message: ${actual_tag_message}"
+            echo "Expected: ${expected_tag_message}"
+            exit 1
+          fi
+
+          git fetch origin --prune
+          if ! git branch -r --contains "${GITHUB_SHA}" | sed 's/^[*[:space:]]*//' | grep -qx "origin/${release_branch}"; then
+            echo "Tagged commit is not contained in expected branch: origin/${release_branch}"
+            exit 1
+          fi
+
+          : > release-notes.txt
+          if grep -qE "^## ${version}$" CHANGELOG.md; then
+            awk -v ver="$version" '
+              BEGIN { in_section=0 }
+              $0 == "## " ver { in_section=1; next }
+              /^## / && in_section { exit }
+              in_section { print }
+            ' CHANGELOG.md > release-notes.txt
+          else
+            echo "No changelog section for ${version}, release body will be empty."
+          fi
+
+          {
+            echo "title=v${tag}"
+            echo "version=${version}"
+            echo "release_branch=${release_branch}"
+            echo "notes<<EOF"
+            cat release-notes.txt
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: create github release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ steps.release_meta.outputs.title }}
+          body: ${{ steps.release_meta.outputs.notes }}
+          files: build/libs/*.jar
