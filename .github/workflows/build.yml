@@ -4,8 +4,64 @@ on:
   push:
     tags:
       - "*"
+  workflow_dispatch:
+    inputs:
+      mc_target:
+        description: Minecraft target version
+        required: false
+        type: choice
+        options:
+          - "all"
+          - "26.1"
+          - "1.21.1"
+          - "1.20.6"
+        default: "all"
 
 jobs:
+  resolve-target:
+    runs-on: ubuntu-24.04
+    outputs:
+      build_matrix: ${{ steps.target.outputs.build_matrix }}
+      release_target: ${{ steps.target.outputs.release_target }}
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - name: resolve build target
+        id: target
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          default_target="$(awk -F= '$1=="minecraft_version" { print $2 }' gradle.properties | tr -d '[:space:]')"
+          if [[ -z "$default_target" ]]; then
+            echo "Cannot resolve minecraft_version from gradle.properties"
+            exit 1
+          fi
+
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]] && [[ -n "${{ github.event.inputs.mc_target }}" ]]; then
+            selected_target="${{ github.event.inputs.mc_target }}"
+          else
+            selected_target="all"
+          fi
+
+          case "$selected_target" in
+            all)
+              build_matrix='["26.1","1.21.1","1.20.6"]'
+              ;;
+            26.1|1.21.1|1.20.6)
+              build_matrix="[\"${selected_target}\"]"
+              ;;
+            *)
+              echo "Unsupported mc_target: $selected_target"
+              exit 1
+              ;;
+          esac
+
+          echo "build_matrix=${build_matrix}" >> "$GITHUB_OUTPUT"
+          echo "release_target=${default_target}" >> "$GITHUB_OUTPUT"
+
   precheck:
     runs-on: ubuntu-24.04
     outputs:
@@ -29,6 +85,11 @@ jobs:
           fi
 
   build:
+    needs: resolve-target
+    strategy:
+      fail-fast: false
+      matrix:
+        mc_target: ${{ fromJson(needs.resolve-target.outputs.build_matrix) }}
     runs-on: ubuntu-24.04
     steps:
       - name: checkout repository
@@ -43,15 +104,15 @@ jobs:
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
       - name: build
-        run: ./gradlew build
+        run: ./gradlew build -PmcTarget=${{ matrix.mc_target }}
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: Artifacts
+          name: Artifacts-mc${{ matrix.mc_target }}
           path: build/libs/
 
   release:
-    needs: precheck
+    needs: [resolve-target, precheck, build]
     if: startsWith(github.ref, 'refs/tags/') && needs.precheck.outputs.is_release_commit == 'true'
     runs-on: ubuntu-24.04
     permissions:
@@ -72,7 +133,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: build release artifacts
-        run: ./gradlew build
+        run: ./gradlew build -PmcTarget=${{ needs.resolve-target.outputs.release_target }}
 
       - name: validate release metadata
         id: release_meta

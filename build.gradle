@@ -5,19 +5,13 @@ plugins {
 
 def mcTarget = (findProperty("mcTarget") ?: project.minecraft_version).toString()
 def targetConfigs = [
-	"26.1"  : [minecraft: "26.1.2", minecraftDepends: "~26.1", loader: "0.19.1", loaderDepends: ">=0.19.1", javaRelease: 25, sourceVariant: "v26"],
-	"1.21"  : [requiresLegacyToolchain: true],
-	"1.20.6": [requiresLegacyToolchain: true]
+	"26.1"  : [minecraft: "26.1.2", minecraftDepends: "~26.1", loader: "0.19.1", loaderDepends: ">=0.19.1", javaRelease: 25, sourceVariant: "V_26_1"],
+	"1.21.1": [minecraft: "1.21.1", minecraftDepends: "~1.21.1", loader: "0.16.14", loaderDepends: ">=0.16.14", javaRelease: 21, sourceVariant: "V_1_21_1"],
+	"1.20.6": [minecraft: "1.20.6", minecraftDepends: "~1.20.6", loader: "0.15.11", loaderDepends: ">=0.15.11", javaRelease: 21, sourceVariant: "V_1_20_6"]
 ]
 def target = targetConfigs[mcTarget]
 if (target == null) {
 	throw new GradleException("Unsupported mcTarget '${mcTarget}'. Supported: ${targetConfigs.keySet().join(', ')}")
-}
-if (target.requiresLegacyToolchain) {
-	throw new GradleException(
-		"mcTarget '${mcTarget}' requires a legacy build branch (Loom+Yarn mappings). " +
-		"Current branch targets the 26.x non-obfuscated toolchain only."
-	)
 }
 
 version = "${project.mod_version}+mc${mcTarget}"
@@ -52,15 +46,20 @@ dependencies {
 	
 }
 
-processResources {
+tasks.withType(ProcessResources).configureEach {
 	inputs.property "version", project.version
 	inputs.property "minecraft_dependency", target.minecraftDepends
 	inputs.property "loader_dependency", target.loaderDepends
+	inputs.property "java_compatibility_level", "JAVA_${target.javaRelease}"
 
 	filesMatching("fabric.mod.json") {
 		expand "version": inputs.properties.version,
 				"minecraft_dependency": inputs.properties.minecraft_dependency,
 				"loader_dependency": inputs.properties.loader_dependency
+	}
+
+	filesMatching("betteractionbar.client.mixins.json") {
+		expand "java_compatibility_level": inputs.properties.java_compatibility_level
 	}
 }
 
