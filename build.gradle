@@ -1,13 +1,24 @@
-plugins {
-	id 'net.fabricmc.fabric-loom' version "${loom_version}"
-	id 'maven-publish'
+def mcTarget = (gradle.startParameter.projectProperties["mcTarget"] ?: findProperty("minecraft_version") ?: "26.1").toString()
+def useRemapLoom = mcTarget != "26.1"
+
+buildscript {
+	repositories {
+		maven { url = "https://maven.fabricmc.net/" }
+		mavenCentral()
+	}
+
+	dependencies {
+		classpath "net.fabricmc:fabric-loom:${project.findProperty("loom_version")}"
+	}
 }
 
-def mcTarget = (findProperty("mcTarget") ?: project.minecraft_version).toString()
+apply plugin: (useRemapLoom ? "net.fabricmc.fabric-loom-remap" : "net.fabricmc.fabric-loom")
+apply plugin: "maven-publish"
+
 def targetConfigs = [
 	"26.1"  : [minecraft: "26.1.2", minecraftDepends: "~26.1", loader: "0.19.1", loaderDepends: ">=0.19.1", javaRelease: 25, sourceVariant: "V_26_1"],
-	"1.21.1": [minecraft: "1.21.1", minecraftDepends: "~1.21.1", loader: "0.16.14", loaderDepends: ">=0.16.14", javaRelease: 21, sourceVariant: "V_1_21_1"],
-	"1.20.6": [minecraft: "1.20.6", minecraftDepends: "~1.20.6", loader: "0.15.11", loaderDepends: ">=0.15.11", javaRelease: 21, sourceVariant: "V_1_20_6"]
+	"1.21.1": [minecraft: "1.21.1", useOfficialMappings: true, minecraftDepends: "~1.21.1", loader: "0.16.14", loaderDepends: ">=0.16.14", javaRelease: 21, sourceVariant: "V_1_21_1"],
+	"1.20.6": [minecraft: "1.20.6", useOfficialMappings: true, minecraftDepends: "~1.20.6", loader: "0.15.11", loaderDepends: ">=0.15.11", javaRelease: 21, sourceVariant: "V_1_20_6"]
 ]
 def target = targetConfigs[mcTarget]
 if (target == null) {
@@ -41,8 +52,12 @@ sourceSets.getByName("client").java.srcDir("src/versioned/${target.sourceVariant
 
 dependencies {
 	minecraft "com.mojang:minecraft:${target.minecraft}"
+	if (target.useOfficialMappings) {
+		mappings loom.officialMojangMappings()
+	}
 	
 	implementation "net.fabricmc:fabric-loader:${target.loader}"
+	implementation "net.fabricmc:sponge-mixin:0.17.1+mixin.0.8.7"
 	
 }
 
