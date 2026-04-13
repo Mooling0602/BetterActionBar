@@ -3,7 +3,7 @@ name: ci-and-release
 on:
   push:
     tags:
-      - '*+*'
+      - "*"
 
 jobs:
   precheck:
@@ -38,8 +38,8 @@ jobs:
       - name: setup jdk
         uses: actions/setup-java@v5
         with:
-          java-version: '25'
-          distribution: 'microsoft'
+          java-version: "25"
+          distribution: "microsoft"
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
       - name: build
@@ -65,8 +65,8 @@ jobs:
       - name: setup jdk
         uses: actions/setup-java@v5
         with:
-          java-version: '25'
-          distribution: 'microsoft'
+          java-version: "25"
+          distribution: "microsoft"
 
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
