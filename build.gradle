@@ -1,0 +1,104 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+	id 'maven-publish'
+}
+
+def mcTarget = (findProperty("mcTarget") ?: project.minecraft_version).toString()
+def targetConfigs = [
+	"26.1"  : [minecraft: "26.1.2", minecraftDepends: "~26.1", loader: "0.19.1", loaderDepends: ">=0.19.1", javaRelease: 25, sourceVariant: "v26"],
+	"1.21"  : [requiresLegacyToolchain: true],
+	"1.20.6": [requiresLegacyToolchain: true]
+]
+def target = targetConfigs[mcTarget]
+if (target == null) {
+	throw new GradleException("Unsupported mcTarget '${mcTarget}'. Supported: ${targetConfigs.keySet().join(', ')}")
+}
+if (target.requiresLegacyToolchain) {
+	throw new GradleException(
+		"mcTarget '${mcTarget}' requires a legacy build branch (Loom+Yarn mappings). " +
+		"Current branch targets the 26.x non-obfuscated toolchain only."
+	)
+}
+
+version = "${project.mod_version}+mc${mcTarget}"
+group = project.maven_group
+
+repositories {
+	// Add repositories to retrieve artifacts from in here.
+	// You should only use this when depending on other mods because
+	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
+	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
+	// for more information about repositories.
+}
+
+loom {
+	splitEnvironmentSourceSets()
+
+	mods {
+		"betteractionbar" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+
+}
+
+sourceSets.getByName("client").java.srcDir("src/versioned/${target.sourceVariant}/client/java")
+
+dependencies {
+	minecraft "com.mojang:minecraft:${target.minecraft}"
+	
+	implementation "net.fabricmc:fabric-loader:${target.loader}"
+	
+}
+
+processResources {
+	inputs.property "version", project.version
+	inputs.property "minecraft_dependency", target.minecraftDepends
+	inputs.property "loader_dependency", target.loaderDepends
+
+	filesMatching("fabric.mod.json") {
+		expand "version": inputs.properties.version,
+				"minecraft_dependency": inputs.properties.minecraft_dependency,
+				"loader_dependency": inputs.properties.loader_dependency
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = target.javaRelease
+}
+
+java {
+	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
+	// if it is present.
+	// If you remove this line, sources will not be generated.
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.toVersion(target.javaRelease)
+	targetCompatibility = JavaVersion.toVersion(target.javaRelease)
+}
+
+jar {
+	inputs.property "projectName", project.name
+
+	from("LICENSE") {
+		rename { "${it}_${project.name}"}
+	}
+}
+
+// configure the maven publication
+publishing {
+	publications {
+		create("mavenJava", MavenPublication) {
+			from components.java
+		}
+	}
+
+	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
+	repositories {
+		// Add repositories to publish to here.
+		// Notice: This block does NOT have the same function as the block in the top level.
+		// The repositories here will be used for publishing your artifact, not for
+		// retrieving dependencies.
+	}
+}
