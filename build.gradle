@@ -50,7 +50,7 @@ loom {
 		}
 	}
 
-	if (useRemapLoom) {
+	if (mcTarget == "26.2") {
 		useIntermediateMappings = true
 		intermediaryUrl = 'https://repo.codemc.io/repository/relativitymc/org/relativitymc/intermediary/%1$s/intermediary-%1$s-v2.jar'
 	}
