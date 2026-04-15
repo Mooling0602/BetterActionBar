@@ -1,7 +1,7 @@
 package io.github.mooling0602.betteractionbar.client;
 
-import net.minecraft.network.chat.Component;
-import net.minecraft.util.Mth;
+import java.lang.reflect.Method;
+
 import org.jetbrains.annotations.Nullable;
 
 public final class ActionBarOverlaySupport {
@@ -20,16 +20,26 @@ public final class ActionBarOverlaySupport {
 	private ActionBarOverlaySupport() {
 	}
 
-	public static boolean shouldHandleMultilineOverlay(@Nullable Component overlayMessageString, int overlayMessageTime) {
+	public static boolean shouldHandleMultilineOverlay(@Nullable Object overlayMessageString, int overlayMessageTime) {
 		if (overlayMessageString == null || overlayMessageTime <= 0) {
 			return false;
 		}
 
-		return overlayMessageString.getString().contains(NEWLINE);
+		return extractPlainText(overlayMessageString).contains(NEWLINE);
+	}
+
+	private static String extractPlainText(Object overlayMessageString) {
+		try {
+			Method getString = overlayMessageString.getClass().getMethod("getString");
+			Object value = getString.invoke(overlayMessageString);
+			return value instanceof String ? (String) value : String.valueOf(value);
+		} catch (ReflectiveOperationException ignored) {
+			return String.valueOf(overlayMessageString);
+		}
 	}
 
 	public static int calculateOverlayAlpha(int overlayMessageTime) {
-		return Mth.clamp(overlayMessageTime * 255 / OVERLAY_FADE_TICKS, 0, 255);
+		return Math.max(0, Math.min(255, overlayMessageTime * 255 / OVERLAY_FADE_TICKS));
 	}
 
 	public static boolean shouldSkipRendering(int alpha) {
@@ -39,7 +49,7 @@ public final class ActionBarOverlaySupport {
 	public static int buildDrawColor(int overlayMessageTime, boolean animateOverlayMessageColor, int alpha) {
 		int color = DEFAULT_TEXT_COLOR_RGB;
 		if (animateOverlayMessageColor) {
-			color = Mth.hsvToRgb((float) overlayMessageTime / RAINBOW_HUE_CYCLE_TICKS, RAINBOW_SATURATION, RAINBOW_BRIGHTNESS) & DEFAULT_TEXT_COLOR_RGB;
+			color = java.awt.Color.HSBtoRGB((float) overlayMessageTime / RAINBOW_HUE_CYCLE_TICKS, RAINBOW_SATURATION, RAINBOW_BRIGHTNESS) & DEFAULT_TEXT_COLOR_RGB;
 		}
 		return color | (alpha << 24);
 	}
