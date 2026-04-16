@@ -47,7 +47,8 @@ public abstract class ActionBarNewlineMixin {
 	}
 
 	private List<OrderedText> betterActionBar$splitOverlayLines() {
-		return this.minecraft.textRenderer.wrapLines(this.overlayMessage, ActionBarOverlaySupport.splitWidthUnlimited());
+		Text normalizedMessage = Text.literal(ActionBarOverlaySupport.normalizeOverlayText(this.overlayMessage));
+		return this.minecraft.textRenderer.wrapLines(normalizedMessage, ActionBarOverlaySupport.splitWidthUnlimited());
 	}
 
 	private void betterActionBar$drawCenteredLines(DrawContext guiGraphics, List<OrderedText> lines, int drawColor) {

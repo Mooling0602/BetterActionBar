@@ -1,6 +1,9 @@
 package io.github.mooling0602.betteractionbar.client;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -25,7 +28,18 @@ public final class ActionBarOverlaySupport {
 			return false;
 		}
 
-		return extractPlainText(overlayMessageString).contains(NEWLINE);
+		return normalizeOverlayText(overlayMessageString).contains(NEWLINE);
+	}
+
+	public static String normalizeOverlayText(@Nullable Object overlayMessageString) {
+		String text = overlayMessageString == null ? "" : extractPlainText(overlayMessageString);
+		List<String> breakTokens = new ArrayList<>(BetterActionBarConfigManager.getConfig().newlineBreak());
+		breakTokens.removeIf(token -> token == null || token.isEmpty());
+		breakTokens.sort(Comparator.comparingInt(String::length).reversed());
+		for (String breakToken : breakTokens) {
+			text = text.replace(breakToken, NEWLINE);
+		}
+		return text;
 	}
 
 	private static String extractPlainText(Object overlayMessageString) {
@@ -59,7 +73,7 @@ public final class ActionBarOverlaySupport {
 	}
 
 	public static int lineStep() {
-		return Math.round(BASE_LINE_HEIGHT * (1.0F + EXTRA_LINE_SPACING_RATIO));
+		return Math.round(BASE_LINE_HEIGHT * (1.0F + BetterActionBarConfigManager.getConfig().lineSpacingPx()));
 	}
 
 	public static int firstLineY(int guiHeight, int lineCount) {

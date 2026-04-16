@@ -1,0 +1,11 @@
+{
+	"screen.betteractionbar.actionbar_font_style": "actionbar Font Style",
+	"screen.betteractionbar.actionbar_font_style.description": "Line spacing and custom newline markers",
+	"screen.betteractionbar.config.title": "Actionbar Font Style",
+	"screen.betteractionbar.config.line_spacing": "Line spacing",
+	"screen.betteractionbar.config.newline_break": "Custom newline markers",
+	"screen.betteractionbar.config.save": "Save",
+	"screen.betteractionbar.config.cancel": "Cancel",
+	"screen.betteractionbar.config.add": "Add marker",
+	"screen.betteractionbar.config.remove": "Remove"
+}

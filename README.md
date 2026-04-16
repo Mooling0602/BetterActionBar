@@ -18,6 +18,19 @@ Install for your game version, it just works.
 
 根据你的游戏版本安装即可。
 
+The client config is stored at `config/betteractionbar.json`.
+
+客户端配置文件位于 `config/betteractionbar.json`。
+
+Example:
+
+```json
+{
+	"lineSpacingPx": 0.1,
+	"newlineBreak": []
+}
+```
+
 ## Notes / 说明
 - `BetterActionBarClient` intentionally keeps an empty `onInitializeClient()` implementation.
 - The functional behavior is provided by client mixins; the entrypoint exists for explicit client-side wiring and future extensibility.

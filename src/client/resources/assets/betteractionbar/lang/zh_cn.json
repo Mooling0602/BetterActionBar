@@ -1,0 +1,11 @@
+{
+	"screen.betteractionbar.actionbar_font_style": "动作栏文本样式",
+	"screen.betteractionbar.actionbar_font_style.description": "行间距、添加自定义换行标记",
+	"screen.betteractionbar.config.title": "动作栏文本样式",
+	"screen.betteractionbar.config.line_spacing": "行间距",
+	"screen.betteractionbar.config.newline_break": "自定义换行标记",
+	"screen.betteractionbar.config.save": "保存",
+	"screen.betteractionbar.config.cancel": "取消",
+	"screen.betteractionbar.config.add": "添加标记",
+	"screen.betteractionbar.config.remove": "删除"
+}
