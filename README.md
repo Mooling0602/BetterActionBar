@@ -22,13 +22,13 @@ Install for your game version, it just works.
 The mod reads `config/betteractionbar.json` on the client.
 
 Supported keys:
-- `LineSpacingPx`: extra spacing added to each text line (pixels). Default: `0.1`
-- `NewLineBreak`: a list of custom newline tokens that will be normalized to `\n`
+- `LineSpacingMultiplier`: extra spacing added to each text line. Default: `0.1`
+- `NewLineBreak`: a list of strings as custom newline tokens that will be normalized to `\n`
 
 Example:
 ```json
 {
-  "LineSpacingPx": 0.1,
+  "LineSpacingMultiplier": 0.1,
   "NewLineBreak": []
 }
 ```
@@ -36,13 +36,13 @@ Example:
 模组会读取客户端的 `config/betteractionbar.json`。
 
 支持的字段：
-- `LineSpacingPx`：每行文字额外增加的行距，单位像素。默认值：`0.1`
-- `NewLineBreak`：自定义换行符列表，会被统一转换为 `\n`
+- `LineSpacingMultiplier`：每行文字额外增加的行距倍数。默认值：`0.1`
+- `NewLineBreak`：自定义换行符（字符串）列表，会被统一转换为 `\n`
 
 示例：
 ```json
 {
-  "LineSpacingPx": 0.1,
+  "LineSpacingMultiplier": 0.1,
   "NewLineBreak": []
 }
 ```
