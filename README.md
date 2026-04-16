@@ -18,10 +18,39 @@ Install for your game version, it just works.
 
 根据你的游戏版本安装即可。
 
+## Configuration / 配置
+The mod reads `config/betteractionbar.json` on the client.
+
+Supported keys:
+- `LineSpacingPx`: extra spacing added to each text line (pixels). Default: `0.1`
+- `NewLineBreak`: a list of custom newline tokens that will be normalized to `\n`
+
+Example:
+```json
+{
+  "LineSpacingPx": 0.1,
+  "NewLineBreak": []
+}
+```
+
+模组会读取客户端的 `config/betteractionbar.json`。
+
+支持的字段：
+- `LineSpacingPx`：每行文字额外增加的行距，单位像素。默认值：`0.1`
+- `NewLineBreak`：自定义换行符列表，会被统一转换为 `\n`
+
+示例：
+```json
+{
+  "LineSpacingPx": 0.1,
+  "NewLineBreak": []
+}
+```
+
 ## Notes / 说明
-- `BetterActionBarClient` intentionally keeps an empty `onInitializeClient()` implementation.
-- The functional behavior is provided by client mixins; the entrypoint exists for explicit client-side wiring and future extensibility.
-- `BetterActionBarClient` 有意保持空实现；实际功能由客户端 mixin 提供，entrypoint 用于明确客户端装配与后续扩展。
+- `BetterActionBarClient` reloads config in `onInitializeClient()`.
+- Actionbar rendering behavior is provided by client mixins.
+- `BetterActionBarClient` 会在 `onInitializeClient()` 中重载配置；actionbar 渲染行为由客户端 mixin 提供。
 
 ## Thanks to / 感谢
 - GitHub Copilot: Helps me to make this cool mod.

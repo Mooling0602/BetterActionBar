@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -22,6 +23,7 @@ public abstract class ActionBarNewlineMixin {
 	@Shadow private int overlayMessageTime;
 	@Shadow private boolean animateOverlayMessageColor;
 
+	@Unique
 	@Inject(method = "renderOverlayMessage", at = @At("HEAD"), cancellable = true)
 	private void betterActionBar$renderMultilineOverlay(GuiGraphics guiGraphics, float tickDelta, CallbackInfo ci) {
 		if (!this.betterActionBar$shouldHandleMultilineOverlay()) {
@@ -41,14 +43,22 @@ public abstract class ActionBarNewlineMixin {
 		ci.cancel();
 	}
 
+	@Unique
 	private boolean betterActionBar$shouldHandleMultilineOverlay() {
-		return ActionBarOverlaySupport.shouldHandleMultilineOverlay(this.overlayMessageString, this.overlayMessageTime);
+		return ActionBarOverlaySupport.shouldHandleMultilineOverlay(this.overlayMessageString == null ? null : this.overlayMessageString.getString(), this.overlayMessageTime);
 	}
 
+	@Unique
 	private List<FormattedCharSequence> betterActionBar$splitOverlayLines() {
-		return this.minecraft.font.split(this.overlayMessageString, ActionBarOverlaySupport.splitWidthUnlimited());
+		String rawText = this.overlayMessageString.getString();
+		String normalizedText = ActionBarOverlaySupport.normalizeNewLineBreaks(rawText);
+		if (normalizedText.equals(rawText)) {
+			return this.minecraft.font.split(this.overlayMessageString, ActionBarOverlaySupport.splitWidthUnlimited());
+		}
+		return this.minecraft.font.split(Component.literal(normalizedText).setStyle(this.overlayMessageString.getStyle()), ActionBarOverlaySupport.splitWidthUnlimited());
 	}
 
+	@Unique
 	private void betterActionBar$drawCenteredLines(GuiGraphics guiGraphics, List<FormattedCharSequence> lines, int drawColor) {
 		int lineStep = ActionBarOverlaySupport.lineStep();
 		int firstLineY = ActionBarOverlaySupport.firstLineY(guiGraphics.guiHeight(), lines.size());

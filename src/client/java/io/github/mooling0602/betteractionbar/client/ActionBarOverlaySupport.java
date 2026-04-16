@@ -1,11 +1,8 @@
 package io.github.mooling0602.betteractionbar.client;
 
-import java.lang.reflect.Method;
-
 import org.jetbrains.annotations.Nullable;
 
 public final class ActionBarOverlaySupport {
-	private static final String NEWLINE = "\n";
 	private static final int OVERLAY_FADE_TICKS = 20;
 	private static final int MIN_VISIBLE_ALPHA = 8;
 	private static final int DEFAULT_TEXT_COLOR_RGB = 0xFFFFFF;
@@ -14,28 +11,21 @@ public final class ActionBarOverlaySupport {
 	private static final float RAINBOW_BRIGHTNESS = 0.6F;
 	private static final int SPLIT_WIDTH_UNLIMITED = 1_000_000;
 	private static final int BASE_LINE_HEIGHT = 9;
-	private static final float EXTRA_LINE_SPACING_RATIO = 0.1F;
 	private static final int BASELINE_OFFSET_FROM_BOTTOM = 68;
 
 	private ActionBarOverlaySupport() {
 	}
 
-	public static boolean shouldHandleMultilineOverlay(@Nullable Object overlayMessageString, int overlayMessageTime) {
+	public static boolean shouldHandleMultilineOverlay(@Nullable String overlayMessageString, int overlayMessageTime) {
 		if (overlayMessageString == null || overlayMessageTime <= 0) {
 			return false;
 		}
 
-		return extractPlainText(overlayMessageString).contains(NEWLINE);
+		return normalizeNewLineBreaks(overlayMessageString).contains("\n");
 	}
 
-	private static String extractPlainText(Object overlayMessageString) {
-		try {
-			Method getString = overlayMessageString.getClass().getMethod("getString");
-			Object value = getString.invoke(overlayMessageString);
-			return value instanceof String ? (String) value : String.valueOf(value);
-		} catch (ReflectiveOperationException ignored) {
-			return String.valueOf(overlayMessageString);
-		}
+	public static String normalizeNewLineBreaks(String text) {
+		return BetterActionBarConfig.normalizeNewLineBreaks(text);
 	}
 
 	public static int calculateOverlayAlpha(int overlayMessageTime) {
@@ -59,7 +49,8 @@ public final class ActionBarOverlaySupport {
 	}
 
 	public static int lineStep() {
-		return Math.round(BASE_LINE_HEIGHT * (1.0F + EXTRA_LINE_SPACING_RATIO));
+		float lineSpacingPx = Math.max(0.0F, BetterActionBarConfig.get().lineSpacingPx());
+		return Math.round(BASE_LINE_HEIGHT + lineSpacingPx);
 	}
 
 	public static int firstLineY(int guiHeight, int lineCount) {
