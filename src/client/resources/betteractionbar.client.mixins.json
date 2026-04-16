@@ -1,14 +1,12 @@
 {
-	"required": true,
-	"package": "io.github.mooling0602.betteractionbar.mixin.client",
-	"compatibilityLevel": "${java_compatibility_level}",
-	"client": [
-		"ActionBarNewlineMixin"
-	],
-	"injectors": {
-		"defaultRequire": 1
-	},
-	"overwrites": {
-		"requireAnnotations": true
-	}
+  "required": true,
+  "package": "io.github.mooling0602.betteractionbar.mixin.client",
+  "compatibilityLevel": "${java_compatibility_level}",
+  "client": ["ActionBarNewlineMixin"],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
 }

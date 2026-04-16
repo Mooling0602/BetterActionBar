@@ -1,35 +1,31 @@
 {
-	"schemaVersion": 1,
-	"id": "betteractionbar",
-	"version": "${version}",
-	"name": "BetterActionBar",
-	"description": "Enhances Minecraft actionbar rendering with newline-aware multiline text support.",
-	"authors": [
-		"Mooling0602"
-	],
-	"contact": {
-		"homepage": "https://github.com/Mooling0602/BetterActionBar",
-		"sources": "https://github.com/Mooling0602/BetterActionBar"
-	},
-	"license": "GPL-3.0-only",
-	"icon": "assets/betteractionbar/icon.png",
-	"environment": "*",
-	"entrypoints": {
-		"main": [
-			"io.github.mooling0602.betteractionbar.BetterActionBarMod"
-		],
-		"client": [
-			"io.github.mooling0602.betteractionbar.client.BetterActionBarClient"
-		]
-	},
-	"mixins": [
-		{
-			"config": "betteractionbar.client.mixins.json",
-			"environment": "client"
-		}
-	],
-	"depends": {
-		"fabricloader": "${loader_dependency}",
-		"minecraft": "${minecraft_dependency}"
-	}
+  "schemaVersion": 1,
+  "id": "betteractionbar",
+  "version": "${version}",
+  "name": "BetterActionBar",
+  "description": "Enhances Minecraft actionbar rendering with newline-aware multiline text support.",
+  "authors": ["Mooling0602"],
+  "contact": {
+    "homepage": "https://github.com/Mooling0602/BetterActionBar",
+    "sources": "https://github.com/Mooling0602/BetterActionBar"
+  },
+  "license": "GPL-3.0-only",
+  "icon": "assets/betteractionbar/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["io.github.mooling0602.betteractionbar.BetterActionBarMod"],
+    "client": [
+      "io.github.mooling0602.betteractionbar.client.BetterActionBarClient"
+    ]
+  },
+  "mixins": [
+    {
+      "config": "betteractionbar.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": "${loader_dependency}",
+    "minecraft": "${minecraft_dependency}"
+  }
 }

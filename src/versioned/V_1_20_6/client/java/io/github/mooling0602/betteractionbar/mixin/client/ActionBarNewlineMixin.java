@@ -1,7 +1,7 @@
 package io.github.mooling0602.betteractionbar.mixin.client;
 
-import java.util.List;
 import io.github.mooling0602.betteractionbar.client.ActionBarOverlaySupport;
+import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
@@ -18,55 +18,112 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Gui.class)
 public abstract class ActionBarNewlineMixin {
-	@Shadow @Final private Minecraft minecraft;
-	@Shadow @Nullable private Component overlayMessageString;
-	@Shadow private int overlayMessageTime;
-	@Shadow private boolean animateOverlayMessageColor;
 
-	@Unique
-	@Inject(method = "renderOverlayMessage", at = @At("HEAD"), cancellable = true)
-	private void betterActionBar$renderMultilineOverlay(GuiGraphics guiGraphics, float tickDelta, CallbackInfo ci) {
-		if (!this.betterActionBar$shouldHandleMultilineOverlay()) {
-			return;
-		}
+    @Shadow
+    @Final
+    private Minecraft minecraft;
 
-		int alpha = ActionBarOverlaySupport.calculateOverlayAlpha(this.overlayMessageTime);
-		if (ActionBarOverlaySupport.shouldSkipRendering(alpha)) {
-			ci.cancel();
-			return;
-		}
+    @Shadow
+    @Nullable
+    private Component overlayMessageString;
 
-		int drawColor = ActionBarOverlaySupport.buildDrawColor(this.overlayMessageTime, this.animateOverlayMessageColor, alpha);
-		List<FormattedCharSequence> lines = this.betterActionBar$splitOverlayLines();
-		this.betterActionBar$drawCenteredLines(guiGraphics, lines, drawColor);
+    @Shadow
+    private int overlayMessageTime;
 
-		ci.cancel();
-	}
+    @Shadow
+    private boolean animateOverlayMessageColor;
 
-	@Unique
-	private boolean betterActionBar$shouldHandleMultilineOverlay() {
-		return ActionBarOverlaySupport.shouldHandleMultilineOverlay(this.overlayMessageString == null ? null : this.overlayMessageString.getString(), this.overlayMessageTime);
-	}
+    @Unique
+    @Inject(
+        method = "renderOverlayMessage",
+        at = @At("HEAD"),
+        cancellable = true
+    )
+    private void betterActionBar$renderMultilineOverlay(
+        GuiGraphics guiGraphics,
+        float tickDelta,
+        CallbackInfo ci
+    ) {
+        if (!this.betterActionBar$shouldHandleMultilineOverlay()) {
+            return;
+        }
 
-	@Unique
-	private List<FormattedCharSequence> betterActionBar$splitOverlayLines() {
-		String rawText = this.overlayMessageString.getString();
-		String normalizedText = ActionBarOverlaySupport.normalizeNewLineBreaks(rawText);
-		if (normalizedText.equals(rawText)) {
-			return this.minecraft.font.split(this.overlayMessageString, ActionBarOverlaySupport.splitWidthUnlimited());
-		}
-		return this.minecraft.font.split(Component.literal(normalizedText).setStyle(this.overlayMessageString.getStyle()), ActionBarOverlaySupport.splitWidthUnlimited());
-	}
+        int alpha = ActionBarOverlaySupport.calculateOverlayAlpha(
+            this.overlayMessageTime
+        );
+        if (ActionBarOverlaySupport.shouldSkipRendering(alpha)) {
+            ci.cancel();
+            return;
+        }
 
-	@Unique
-	private void betterActionBar$drawCenteredLines(GuiGraphics guiGraphics, List<FormattedCharSequence> lines, int drawColor) {
-		int lineStep = ActionBarOverlaySupport.lineStep();
-		int firstLineY = ActionBarOverlaySupport.firstLineY(guiGraphics.guiHeight(), lines.size());
-		for (int i = 0; i < lines.size(); i++) {
-			FormattedCharSequence line = lines.get(i);
-			int x = ActionBarOverlaySupport.centeredX(guiGraphics.guiWidth(), this.minecraft.font.width(line));
-			int y = firstLineY + i * lineStep;
-			guiGraphics.drawString(this.minecraft.font, line, x, y, drawColor, true);
-		}
-	}
+        int drawColor = ActionBarOverlaySupport.buildDrawColor(
+            this.overlayMessageTime,
+            this.animateOverlayMessageColor,
+            alpha
+        );
+        List<FormattedCharSequence> lines =
+            this.betterActionBar$splitOverlayLines();
+        this.betterActionBar$drawCenteredLines(guiGraphics, lines, drawColor);
+
+        ci.cancel();
+    }
+
+    @Unique
+    private boolean betterActionBar$shouldHandleMultilineOverlay() {
+        return ActionBarOverlaySupport.shouldHandleMultilineOverlay(
+            this.overlayMessageString == null
+                ? null
+                : this.overlayMessageString.getString(),
+            this.overlayMessageTime
+        );
+    }
+
+    @Unique
+    private List<FormattedCharSequence> betterActionBar$splitOverlayLines() {
+        String rawText = this.overlayMessageString.getString();
+        String normalizedText = ActionBarOverlaySupport.normalizeNewLineBreaks(
+            rawText
+        );
+        if (normalizedText.equals(rawText)) {
+            return this.minecraft.font.split(
+                this.overlayMessageString,
+                ActionBarOverlaySupport.splitWidthUnlimited()
+            );
+        }
+        return this.minecraft.font.split(
+            Component.literal(normalizedText).setStyle(
+                this.overlayMessageString.getStyle()
+            ),
+            ActionBarOverlaySupport.splitWidthUnlimited()
+        );
+    }
+
+    @Unique
+    private void betterActionBar$drawCenteredLines(
+        GuiGraphics guiGraphics,
+        List<FormattedCharSequence> lines,
+        int drawColor
+    ) {
+        int lineStep = ActionBarOverlaySupport.lineStep();
+        int firstLineY = ActionBarOverlaySupport.firstLineY(
+            guiGraphics.guiHeight(),
+            lines.size()
+        );
+        for (int i = 0; i < lines.size(); i++) {
+            FormattedCharSequence line = lines.get(i);
+            int x = ActionBarOverlaySupport.centeredX(
+                guiGraphics.guiWidth(),
+                this.minecraft.font.width(line)
+            );
+            int y = firstLineY + i * lineStep;
+            guiGraphics.drawString(
+                this.minecraft.font,
+                line,
+                x,
+                y,
+                drawColor,
+                true
+            );
+        }
+    }
 }
