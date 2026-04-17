@@ -12,3 +12,5 @@ Improve line render.
 
 ## 1.0.6
 Support configure `LineSpacingMultiplier` and `NewLineBreak` for displaying actionbar text.
+
+**Full Changelog**: https://github.com/Mooling0602/BetterActionBar/compare/1.0.5...1.0.6
