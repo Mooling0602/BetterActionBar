@@ -33,7 +33,6 @@ public abstract class ActionBarNewlineMixin {
     @Shadow
     private boolean animateOverlayMessageColor;
 
-    @Unique
     @Inject(
         method = "renderOverlayMessage",
         at = @At("HEAD"),
