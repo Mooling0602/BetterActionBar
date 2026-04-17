@@ -5,6 +5,7 @@ Fabric client mod that adds newline support for actionbar messages containing `\
 为 actionbar 消息内容添加换行支持的Fabric客户端模组。
 
 ## Version Compatibility / 版本兼容
+- Minecraft `26.2` (Snapshot versions): Fabric Loader `>=0.19.1`, Java 25
 - Minecraft `26.1.x` (default build target): Fabric Loader `>=0.19.1`, Java 25
 - Minecraft `1.21.1`: Fabric Loader `>=0.16.14`, Java 21
 - Minecraft `1.20.6`: Fabric Loader `>=0.15.11`, Java 21
