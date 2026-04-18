@@ -6,6 +6,7 @@
     "ActionBarNewlineMixin",
     "AccessibilityOptionsButtonMixin",
     "GameOptionsScreenAccessor",
+    "OptionsSubScreenAccessor",
     "MinecraftClientAccessor"
   ],
   "injectors": {

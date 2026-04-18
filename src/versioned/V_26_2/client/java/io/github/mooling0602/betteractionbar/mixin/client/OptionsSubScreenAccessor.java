@@ -6,7 +6,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(net.minecraft.client.gui.screen.option.GameOptionsScreen.class)
-public interface GameOptionsScreenAccessor {
+public interface OptionsSubScreenAccessor {
     @Accessor("body")
     OptionListWidget betterActionBar$getList();
 
