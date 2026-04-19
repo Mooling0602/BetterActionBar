@@ -2,11 +2,11 @@ package io.github.mooling0602.betteractionbar.mixin.client;
 
 import io.github.mooling0602.betteractionbar.client.ActionBarOverlaySupport;
 import java.util.List;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.text.OrderedText;
-import net.minecraft.text.Text;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,16 +16,16 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(net.minecraft.client.gui.hud.InGameHud.class)
+@Mixin(net.minecraft.client.gui.Hud.class)
 public abstract class ActionBarNewlineMixin {
 
     @Shadow
     @Final
-    private MinecraftClient minecraft;
+    private Minecraft minecraft;
 
     @Shadow
     @Nullable
-    private Text overlayMessage;
+    private Component overlayMessageString;
 
     @Shadow
     private int overlayMessageTime;
@@ -35,13 +35,13 @@ public abstract class ActionBarNewlineMixin {
 
     @Unique
     @Inject(
-        method = "renderOverlayMessage",
+        method = "extractOverlayMessage",
         at = @At("HEAD"),
         cancellable = true
     )
     private void betterActionBar$renderMultilineOverlay(
-        DrawContext guiGraphics,
-        RenderTickCounter deltaTracker,
+        GuiGraphicsExtractor guiGraphics,
+        DeltaTracker deltaTracker,
         CallbackInfo ci
     ) {
         if (!this.betterActionBar$shouldHandleMultilineOverlay()) {
@@ -61,7 +61,7 @@ public abstract class ActionBarNewlineMixin {
             this.animateOverlayMessageColor,
             alpha
         );
-        List<OrderedText> lines = this.betterActionBar$splitOverlayLines();
+        List<FormattedCharSequence> lines = this.betterActionBar$splitOverlayLines();
         this.betterActionBar$drawCenteredLines(guiGraphics, lines, drawColor);
 
         ci.cancel();
@@ -70,28 +70,28 @@ public abstract class ActionBarNewlineMixin {
     @Unique
     private boolean betterActionBar$shouldHandleMultilineOverlay() {
         return ActionBarOverlaySupport.shouldHandleMultilineOverlay(
-            this.overlayMessage == null
+            this.overlayMessageString == null
                 ? null
-                : this.overlayMessage.getString(),
+                : this.overlayMessageString.getString(),
             this.overlayMessageTime
         );
     }
 
     @Unique
-    private List<OrderedText> betterActionBar$splitOverlayLines() {
-        String rawText = this.overlayMessage.getString();
+    private List<FormattedCharSequence> betterActionBar$splitOverlayLines() {
+        String rawText = this.overlayMessageString.getString();
         String normalizedText = ActionBarOverlaySupport.normalizeNewLineBreaks(
             rawText
         );
         if (normalizedText.equals(rawText)) {
-            return this.minecraft.textRenderer.wrapLines(
-                this.overlayMessage,
+            return this.minecraft.font.split(
+                this.overlayMessageString,
                 ActionBarOverlaySupport.splitWidthUnlimited()
             );
         }
-        return this.minecraft.textRenderer.wrapLines(
-            Text.literal(normalizedText).setStyle(
-                this.overlayMessage.getStyle()
+        return this.minecraft.font.split(
+            Component.literal(normalizedText).setStyle(
+                this.overlayMessageString.getStyle()
             ),
             ActionBarOverlaySupport.splitWidthUnlimited()
         );
@@ -99,24 +99,24 @@ public abstract class ActionBarNewlineMixin {
 
     @Unique
     private void betterActionBar$drawCenteredLines(
-        DrawContext guiGraphics,
-        List<OrderedText> lines,
+        GuiGraphicsExtractor guiGraphics,
+        List<FormattedCharSequence> lines,
         int drawColor
     ) {
         int lineStep = ActionBarOverlaySupport.lineStep();
         int firstLineY = ActionBarOverlaySupport.firstLineY(
-            guiGraphics.getScaledWindowHeight(),
+            guiGraphics.guiHeight(),
             lines.size()
         );
         for (int i = 0; i < lines.size(); i++) {
-            OrderedText line = lines.get(i);
+            FormattedCharSequence line = lines.get(i);
             int x = ActionBarOverlaySupport.centeredX(
-                guiGraphics.getScaledWindowWidth(),
-                this.minecraft.textRenderer.getWidth(line)
+                guiGraphics.guiWidth(),
+                this.minecraft.font.width(line)
             );
             int y = firstLineY + i * lineStep;
-            guiGraphics.drawText(
-                this.minecraft.textRenderer,
+            guiGraphics.text(
+                this.minecraft.font,
                 line,
                 x,
                 y,
