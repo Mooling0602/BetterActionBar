@@ -33,7 +33,6 @@ public abstract class ActionBarNewlineMixin {
     @Shadow
     private boolean animateOverlayMessageColor;
 
-    @Unique
     @Inject(
         method = "extractOverlayMessage",
         at = @At("HEAD"),
@@ -61,7 +60,8 @@ public abstract class ActionBarNewlineMixin {
             this.animateOverlayMessageColor,
             alpha
         );
-        List<FormattedCharSequence> lines = this.betterActionBar$splitOverlayLines();
+        List<FormattedCharSequence> lines =
+            this.betterActionBar$splitOverlayLines();
         this.betterActionBar$drawCenteredLines(guiGraphics, lines, drawColor);
 
         ci.cancel();
@@ -115,14 +115,7 @@ public abstract class ActionBarNewlineMixin {
                 this.minecraft.font.width(line)
             );
             int y = firstLineY + i * lineStep;
-            guiGraphics.text(
-                this.minecraft.font,
-                line,
-                x,
-                y,
-                drawColor,
-                true
-            );
+            guiGraphics.text(this.minecraft.font, line, x, y, drawColor, true);
         }
     }
 }
