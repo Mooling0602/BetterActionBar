@@ -1,4 +1,3 @@
-// Co-authored-by: ShulkerSakura <2531493755@qq.com>
 package io.github.mooling0602.betteractionbar.mixin.client;
 
 import io.github.mooling0602.betteractionbar.client.BetterActionBarClient;
