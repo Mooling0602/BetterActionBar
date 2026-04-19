@@ -59,6 +59,7 @@ Example:
 > This part is written by Chinese Simplified firstly.
 >
 > Translation may be generated from AI, or PRs for this are welcomed.
+
 对于不同的游戏版本，插件需要通过 Mixin 提供 actionbar 的渲染接口，以便核心模块调用。
 
 要想在 IDE/LSP 中针对不同游戏版本获取到来自 Minecraft 的上游接口以开发 Mixin 实现，需要临时性的修改 `gradle.properties`，使目标版本和你的预期一致。
