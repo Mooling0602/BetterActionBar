@@ -8,9 +8,9 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(OptionsSubScreen.class)
 public interface OptionsSubScreenAccessor {
-    @Accessor("list")
-    OptionsList getList();
+  @Accessor("list")
+  OptionsList getList();
 
-    @Accessor("options")
-    Options getOptions();
+  @Accessor("options")
+  Options getOptions();
 }
