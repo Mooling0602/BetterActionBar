@@ -9,12 +9,12 @@ buildscript {
 	}
 }
 
-plugins {
-	id 'net.fabricmc.fabric-loom' version "${loom_version}"
-	id 'maven-publish'
-}
-
 def mcTarget = (gradle.startParameter.projectProperties["mcTarget"] ?: findProperty("minecraft_version") ?: "26.2").toString()
+def useRemapLoom = !(mcTarget == "26.1" || mcTarget == "26.2")
+
+apply plugin: (useRemapLoom ? "net.fabricmc.fabric-loom-remap" : "net.fabricmc.fabric-loom")
+apply plugin: "maven-publish"
+
 def targetConfigs = [
 	"26.2": [minecraft: "26.2-snapshot-3", minecraftDepends: "~26.2-", loader: "0.19.1", loaderDepends: ">=0.19.1", javaRelease: 25, sourceVariant: "V_26_2"],
 	"26.1"  : [minecraft: "26.1.2", minecraftDepends: "~26.1", loader: "0.19.1", loaderDepends: ">=0.19.1", javaRelease: 25, sourceVariant: "V_26_1"],
