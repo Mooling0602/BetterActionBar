@@ -1,6 +1,7 @@
 package io.github.mooling0602.betteractionbar.mixin.client;
 
 import io.github.mooling0602.betteractionbar.client.BetterActionBarClient;
+
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;

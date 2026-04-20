@@ -63,6 +63,10 @@ sourceSets {
 
 sourceSets.getByName("client").java.srcDir("src/versions/${mcTarget}/client/java")
 
+if (mcTarget.startsWith("26.")) {
+    sourceSets.getByName("client").java.srcDir("src/versions/share/26/client/java")
+}
+
 dependencies {
 	minecraft "com.mojang:minecraft:${target.minecraft}"
 	if (target.useOfficialMappings) {
