@@ -16,10 +16,11 @@ apply plugin: (useRemapLoom ? "net.fabricmc.fabric-loom-remap" : "net.fabricmc.f
 apply plugin: "maven-publish"
 
 def targetConfigs = [
-	"26.2": [minecraft: "26.2-snapshot-3", minecraftDepends: "~26.2-", loader: "0.19.1", loaderDepends: ">=0.19.1", javaRelease: 25, sourceVariant: "V_26_2"],
-	"26.1"  : [minecraft: "26.1.2", minecraftDepends: "~26.1", loader: "0.19.1", loaderDepends: ">=0.19.1", javaRelease: 25, sourceVariant: "V_26_1"],
-	"1.21.1": [minecraft: "1.21.1", useOfficialMappings: true, minecraftDepends: "~1.21.1", loader: "0.16.14", loaderDepends: ">=0.16.14", javaRelease: 21, sourceVariant: "V_1_21_1"],
-	"1.20.6": [minecraft: "1.20.6", useOfficialMappings: true, minecraftDepends: "~1.20.6", loader: "0.15.11", loaderDepends: ">=0.15.11", javaRelease: 21, sourceVariant: "V_1_20_6"]
+	"26.2": [minecraft: "26.2-snapshot-3", minecraftDepends: "~26.2-", loader: "0.19.1", loaderDepends: ">=0.19.1", javaRelease: 25],
+	"26.1": [minecraft: "26.1.2", minecraftDepends: "~26.1", loader: "0.19.1", loaderDepends: ">=0.19.1", javaRelease: 25],
+	"1.21.6": [minecraft: "1.21.6", useOfficialMappings: true, minecraftDepends: "~1.21.6", loader: "0.16.14", loaderDepends: ">=0.16.14", javaRelease: 21],
+	"1.21.1": [minecraft: "1.21.1", useOfficialMappings: true, minecraftDepends: ">=1.21.1 <1.21.6", loader: "0.16.14", loaderDepends: ">=0.16.14", javaRelease: 21],
+	"1.20.6": [minecraft: "1.20.6", useOfficialMappings: true, minecraftDepends: "~1.20.6", loader: "0.15.11", loaderDepends: ">=0.15.11", javaRelease: 21]
 ]
 def target = targetConfigs[mcTarget]
 if (target == null) {
@@ -61,10 +62,20 @@ sourceSets {
 	}
 }
 
-sourceSets.getByName("client").java.srcDir("src/versions/${mcTarget}/client/java")
+// sourceSets.getByName("client").java.srcDir("src/versions/${mcTarget}/client/java")
+sourceSets.getByName("client").java.srcDir("src/versions/${mcTarget == "1.21.6" ? "1.21.1" : mcTarget}/client/java")
 
-if (mcTarget.startsWith("26.")) {
-    sourceSets.getByName("client").java.srcDir("src/versions/share/26/client/java")
+def isAtLeast1_21 = {
+    if (mcTarget.startsWith("26.")) return true
+    if (!mcTarget.startsWith("1.")) return false
+    def parts = mcTarget.substring(2).tokenize('.').collect { it as int }
+    if (parts[0] > 21) return true
+    if (parts[0] == 21) return true
+    return false
+}()
+
+if (isAtLeast1_21) {
+    sourceSets.getByName("client").java.srcDir("src/versions/share/options/client/java")
 }
 
 dependencies {

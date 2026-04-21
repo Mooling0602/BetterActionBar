@@ -5,7 +5,8 @@
   "client": [
     "ActionBarNewlineMixin",
     "AccessibilityOptionsScreenMixin",
-    "OptionsSubScreenAccessor"
+    "OptionsSubScreenAccessor",
+    "AccessibilityOptionsScreenInvoker"
   ],
   "injectors": {
     "defaultRequire": 1
