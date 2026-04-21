@@ -81,7 +81,10 @@ public abstract class ActionBarNewlineMixin {
 
     @Unique
     private List<FormattedCharSequence> betterActionBar$splitOverlayLines() {
-        String rawText = this.overlayMessageString.getString();
+        String rawText = "";
+        if (this.overlayMessageString != null) {
+            rawText = this.overlayMessageString.getString();
+        }
         String normalizedText = ActionBarOverlaySupport.normalizeNewLineBreaks(
             rawText
         );
