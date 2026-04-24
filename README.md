@@ -5,10 +5,19 @@ Fabric client mod that adds newline support for actionbar messages containing `\
 为 actionbar 消息内容添加换行支持的Fabric客户端模组。
 
 ## Version Compatibility / 版本兼容
-- Minecraft `26.2` (Snapshot versions): Fabric Loader `>=0.19.1`, Java 25
-- Minecraft `26.1.x` (default build target): Fabric Loader `>=0.19.1`, Java 25
+- Minecraft `26.2` (snapshot versions): Fabric Loader `>=0.19.1`, Java 25
+- Minecraft `26.1.x` (latest stable): Fabric Loader `>=0.19.1`, Java 25
+- Minecraft `1.21.6`: Fabric Loader `>=0.16.14`, Java 21
 - Minecraft `1.21.1`: Fabric Loader `>=0.16.14`, Java 21
 - Minecraft `1.20.6`: Fabric Loader `>=0.15.11`, Java 21
+
+If your game version is not listed above, choose the closest lower target version (i.e., the latest version that is still lower than or equal to your game version).
+
+For example: if your client version is `1.21.11`, use `1.21.6` (but not `1.21.1`).
+
+如果你的游戏版本不在上述列表中，请选择离你游戏版本最近且比它更低的目标版本（即不高于你游戏版本的最新版本）
+
+例如：若你的客户端版本为 `1.21.11`，请使用 `1.21.6`（而非 `1.21.1`）。
 
 Build target can be switched with Gradle property `mcTarget` (for example: `./gradlew build -PmcTarget=1.21.1
 > Default `mcTarget` value is `26.2` now.
