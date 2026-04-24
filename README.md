@@ -75,6 +75,16 @@ Example:
 
 然后运行 `./gradlew cleanEclipse eclipse`，并重启 LSP 或 IDE，你应该可以获取到正确的模块和接口补全。
 
+> 经过测试，在 NeoVim（nvim-jdtls）和 Zed 编辑器（同样使用 jdtls 作为 LSP ）中，自动补全将正常工作，但 IntelliJ IDEA 中仍会报错且无法使用。
+
+For different game versions, the mod needs to provide actionbar rendering hooks via Mixin for the core module to call.
+
+To obtain the upstream Minecraft interfaces for the target game version in an IDE/LSP to develop Mixin implementations, you need to temporarily modify `gradle.properties` to set the target version to your desired one.
+
+Then run `./gradlew cleanEclipse eclipse`, and restart your LSP or IDE. You should then have correct module and interface auto-completion.
+
+> As I tested, auto-completion will work fine in NeoVim (nvim-jdtls) and Zed (also use jdtls as LSP), but not in IntelliJ IDEA.
+
 ## Thanks to / 感谢
 - GitHub Copilot: Helps me to create this cool mod.
 
