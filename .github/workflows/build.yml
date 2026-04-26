@@ -192,3 +192,157 @@ jobs:
           name: ${{ steps.release_meta.outputs.title }}
           body: ${{ steps.release_meta.outputs.notes }}
           files: release-artifacts/*.jar
+
+      - name: publish to modrinth
+        shell: bash
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          VERSION="${{ steps.release_meta.outputs.version }}"
+
+          # Dynamically parse mc_target -> minecraft version mapping from build.gradle.
+          # The targetConfigs block defines the exact Minecraft version used for each target.
+          # Modrinth also reads fabric.mod.json from inside each JAR to auto-detect per-file
+          # compatibility, so the game_versions here serve as display metadata.
+          TARGET_CONFIGS="$(grep -E '^[[:space:]]*"[^"]+":[[:space:]]*\[minecraft:[[:space:]]*"[^"]+"' build.gradle | \
+                            sed 's/^[[:space:]]*"\([^"]*\)":[[:space:]]*\[minecraft:[[:space:]]*"\([^"]*\)".*/\1=\2/' || true)"
+
+          declare -A MC_TARGET_TO_GAME_VERSION
+          while IFS='=' read -r target mc_ver; do
+            [[ -n "$target" ]] && MC_TARGET_TO_GAME_VERSION["$target"]="$mc_ver"
+          done <<< "$TARGET_CONFIGS"
+
+          if [[ ${#MC_TARGET_TO_GAME_VERSION[@]} -eq 0 ]]; then
+            echo "Error: failed to parse targetConfigs from build.gradle"
+            exit 1
+          fi
+          echo "Parsed MC target mapping from build.gradle:"
+          for k in "${!MC_TARGET_TO_GAME_VERSION[@]}"; do
+            echo "  $k -> ${MC_TARGET_TO_GAME_VERSION[$k]}"
+          done
+
+          # Resolve project ID from slug
+          PROJECT=$(curl -sS -H "Authorization: $MODRINTH_TOKEN" \
+            "https://api.modrinth.com/v2/project/betteractionbar")
+          PROJECT_ID=$(echo "$PROJECT" | jq -r '.id')
+          if [[ -z "$PROJECT_ID" || "$PROJECT_ID" == "null" ]]; then
+            echo "Error: unable to resolve Modrinth project for slug 'betteractionbar'"
+            exit 1
+          fi
+          echo "Resolved Modrinth project: $PROJECT_ID"
+
+          # Collect game versions, file form field names and file args from artifacts
+          GAME_VERSIONS=()
+          FILE_PARTS_NAMES=()
+          FILE_FORM_ARGS=()
+          PRIMARY_FIELD=""
+
+          for jar in release-artifacts/*.jar; do
+            [[ -f "$jar" ]] || continue
+            filename="$(basename "$jar")"
+
+            # Skip sources and dev JARs, include only the main mod JAR
+            case "$filename" in
+              *-sources*|*-dev*) continue ;;
+            esac
+
+            # Extract mc target from filename: <mod>-<ver>+mc<target>.jar -> target
+            mc_target="$(printf '%s\n' "$filename" | sed -n 's/.*+mc\([^.]*\)\.jar/\1/p')"
+            if [[ -z "$mc_target" ]]; then
+              echo "Warning: could not extract MC target from $filename, skipping"
+              continue
+            fi
+
+            game_version="${MC_TARGET_TO_GAME_VERSION[$mc_target]:-$mc_target}"
+            # Form field name must be a valid multipart field name (no dots)
+            field_name="file_${mc_target//./_}"
+
+            GAME_VERSIONS+=("$game_version")
+            FILE_PARTS_NAMES+=("$field_name")
+            FILE_FORM_ARGS+=(-F "$field_name=@$jar")
+
+            # Use the 26.2 JAR as the primary file
+            if [[ "$mc_target" == "26.2" ]]; then
+              PRIMARY_FIELD="$field_name"
+            fi
+          done
+
+          if [[ ${#FILE_FORM_ARGS[@]} -eq 0 ]]; then
+            echo "Error: no mod JAR files found in release-artifacts/"
+            exit 1
+          fi
+
+          # Fall back to the first file if 26.2 was not built
+          if [[ -z "$PRIMARY_FIELD" ]]; then
+            PRIMARY_FIELD="${FILE_PARTS_NAMES[0]}"
+          fi
+
+          # Build JSON arrays
+          GAME_VERSIONS_JSON="$(printf '%s\n' "${GAME_VERSIONS[@]}" | jq -R . | jq -s -c .)"
+          FILE_PARTS_JSON="$(printf '%s\n' "${FILE_PARTS_NAMES[@]}" | jq -R . | jq -s -c .)"
+
+          # Read changelog
+          CHANGELOG_TEXT="$(cat release-notes.txt 2>/dev/null || true)"
+          CHANGELOG_JSON="$(printf '%s\n' "$CHANGELOG_TEXT" | jq -Rs .)"
+
+          # Build version metadata JSON
+          DATA="$(jq -n \
+            --arg project_id "$PROJECT_ID" \
+            --arg version_number "$VERSION" \
+            --arg name "BetterActionBar $VERSION" \
+            --argjson changelog "$CHANGELOG_JSON" \
+            --argjson game_versions "$GAME_VERSIONS_JSON" \
+            --argjson file_parts "$FILE_PARTS_JSON" \
+            --arg primary_file "$PRIMARY_FIELD" \
+            '{
+              project_id: $project_id,
+              name: $name,
+              version_number: $version_number,
+              changelog: $changelog,
+              dependencies: [{
+                project_id: "P7dR8mSH",
+                version_id: null,
+                file_name: null,
+                dependency_type: "optional"
+              }],
+              game_versions: $game_versions,
+              version_type: "release",
+              loaders: ["fabric"],
+              featured: false,
+              status: "listed",
+              requested_status: "listed",
+              file_parts: $file_parts,
+              primary_file: $primary_file
+            }')"
+
+          echo "Publishing version $VERSION to Modrinth..."
+          echo "  Game versions: ${GAME_VERSIONS[*]}"
+          echo "  Primary file: $PRIMARY_FIELD"
+
+          # Write JSON data to a temp file to avoid curl -F parsing issues with
+          # special characters (semicolons, commas) inside the JSON payload.
+          MODRINTH_DATA_FILE="$(mktemp)"
+          printf '%s\n' "$DATA" > "$MODRINTH_DATA_FILE"
+
+          RESPONSE="$(curl -sS -w '\n%{http_code}' -X POST "https://api.modrinth.com/v2/version" \
+            -H "Authorization: $MODRINTH_TOKEN" \
+            -F "data=@$MODRINTH_DATA_FILE;type=application/json" \
+            "${FILE_FORM_ARGS[@]}")"
+
+          rm -f "$MODRINTH_DATA_FILE"
+
+          HTTP_CODE="$(printf '%s\n' "$RESPONSE" | tail -1)"
+          BODY="$(printf '%s\n' "$RESPONSE" | sed '$d')"
+
+          echo "HTTP $HTTP_CODE"
+
+          if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
+            echo "Error: Modrinth publish failed (HTTP $HTTP_CODE)"
+            printf '%s\n' "$BODY" | jq -r '.description // .error // "Unknown error"' 2>/dev/null || printf '%s\n' "$BODY"
+            exit 1
+          fi
+
+          MODRINTH_VERSION_ID="$(printf '%s\n' "$BODY" | jq -r '.id')"
+          echo "Successfully published to Modrinth! Version ID: $MODRINTH_VERSION_ID"
