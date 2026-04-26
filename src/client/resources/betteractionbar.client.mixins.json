@@ -2,6 +2,7 @@
   "required": true,
   "package": "io.github.mooling0602.betteractionbar.mixin.client",
   "compatibilityLevel": "${java_compatibility_level}",
+  "refmap": "betteractionbar.client.mixins.refmap.json",
   "client": [
     "ActionBarNewlineMixin",
     "AccessibilityOptionsScreenMixin",

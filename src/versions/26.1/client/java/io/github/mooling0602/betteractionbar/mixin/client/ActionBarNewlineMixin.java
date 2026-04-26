@@ -1,12 +1,15 @@
 package io.github.mooling0602.betteractionbar.mixin.client;
 
+import com.mojang.serialization.JsonOps;
 import io.github.mooling0602.betteractionbar.client.ActionBarOverlaySupport;
+import io.github.mooling0602.betteractionbar.client.BetterActionBarClient;
 import java.util.List;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.util.FormattedCharSequence;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
@@ -33,6 +36,23 @@ public abstract class ActionBarNewlineMixin {
 
     @Shadow
     private boolean animateOverlayMessageColor;
+
+    @Inject(method = "setOverlayMessage", at = @At("HEAD"))
+    private void betterActionBar$logOverlayMessage(
+        Component component,
+        boolean animateColor,
+        CallbackInfo ci
+    ) {
+        if (component != null) {
+            BetterActionBarClient.LOG.info(
+                "Received actionbar [{}]: {}",
+                component.getClass().getSimpleName(),
+                ComponentSerialization.CODEC
+                    .encodeStart(JsonOps.INSTANCE, component)
+                    .getOrThrow()
+            );
+        }
+    }
 
     @Unique
     @Inject(
@@ -91,10 +111,12 @@ public abstract class ActionBarNewlineMixin {
                 ActionBarOverlaySupport.splitWidthUnlimited()
             );
         }
+        Component transformed =
+            ActionBarOverlaySupport.normalizeNewLinesInComponent(
+                this.overlayMessageString
+            );
         return this.minecraft.font.split(
-            Component.literal(normalizedText).setStyle(
-                this.overlayMessageString.getStyle()
-            ),
+            transformed,
             ActionBarOverlaySupport.splitWidthUnlimited()
         );
     }

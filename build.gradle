@@ -40,6 +40,9 @@ repositories {
 
 loom {
 	splitEnvironmentSourceSets()
+	mixin {
+		defaultRefmapName = "betteractionbar.client.mixins.refmap.json"
+	}
 
 	mods {
 		"betteractionbar" {

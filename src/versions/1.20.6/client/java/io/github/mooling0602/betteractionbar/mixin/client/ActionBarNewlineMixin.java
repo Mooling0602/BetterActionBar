@@ -33,7 +33,6 @@ public abstract class ActionBarNewlineMixin {
     @Shadow
     private boolean animateOverlayMessageColor;
 
-    @Unique
     @Inject(
         method = "renderOverlayMessage",
         at = @At("HEAD"),
@@ -90,10 +89,12 @@ public abstract class ActionBarNewlineMixin {
                 ActionBarOverlaySupport.splitWidthUnlimited()
             );
         }
+        Component transformed =
+            ActionBarOverlaySupport.normalizeNewLinesInComponent(
+                this.overlayMessageString
+            );
         return this.minecraft.font.split(
-            Component.literal(normalizedText).setStyle(
-                this.overlayMessageString.getStyle()
-            ),
+            transformed,
             ActionBarOverlaySupport.splitWidthUnlimited()
         );
     }

@@ -1,5 +1,11 @@
 package io.github.mooling0602.betteractionbar.client;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import org.jetbrains.annotations.Nullable;
 
 public final class ActionBarOverlaySupport {
@@ -82,5 +88,79 @@ public final class ActionBarOverlaySupport {
 
     public static int centeredX(int guiWidth, int lineWidth) {
         return (guiWidth - lineWidth) / 2;
+    }
+
+    public static Component normalizeNewLinesInComponent(Component component) {
+        List<String> tokens = getValidNewLineTokens();
+        if (tokens.isEmpty()) {
+            return component;
+        }
+        return normalizeInTree(component, tokens);
+    }
+
+    private static Component normalizeInTree(
+        Component component,
+        List<String> tokens
+    ) {
+        List<Component> siblings = component.getSiblings();
+        List<Component> processedSiblings = new ArrayList<>(siblings.size());
+        boolean siblingsChanged = false;
+        for (Component sibling : siblings) {
+            Component processed = normalizeInTree(sibling, tokens);
+            processedSiblings.add(processed);
+            if (processed != sibling) {
+                siblingsChanged = true;
+            }
+        }
+
+        String replacedText = null;
+        String text = component
+            .getContents()
+            .visit((textLambda) -> Optional.of(textLambda))
+            .orElse(null);
+        if (text != null) {
+            String normalized = text
+                .replace("\r\n", "\n")
+                .replace('\r', '\n');
+            for (String token : tokens) {
+                normalized = normalized.replace(token, "\n");
+            }
+            if (!normalized.equals(text)) {
+                replacedText = normalized;
+            }
+        }
+
+        if (replacedText == null && !siblingsChanged) {
+            return component;
+        }
+
+        MutableComponent result;
+        if (replacedText != null) {
+            result = Component.literal(replacedText).setStyle(
+                component.getStyle()
+            );
+        } else {
+            result = component.copy();
+            result.getSiblings().clear();
+        }
+
+        for (Component s : processedSiblings) {
+            result.append(s);
+        }
+        return result;
+    }
+
+    private static List<String> getValidNewLineTokens() {
+        List<String> tokens = BetterActionBarConfig.get().newLineBreaks();
+        if (tokens == null || tokens.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<String> valid = new ArrayList<>(tokens.size());
+        for (String token : tokens) {
+            if (token != null && !token.isEmpty()) {
+                valid.add(token);
+            }
+        }
+        return valid;
     }
 }
