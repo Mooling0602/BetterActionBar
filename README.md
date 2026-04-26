@@ -63,6 +63,8 @@ Example:
 - `BetterActionBarClient` reloads config in `onInitializeClient()`.
 - Actionbar rendering behavior is provided by client mixins.
 - `BetterActionBarClient` 会在 `onInitializeClient()` 中重载配置；actionbar 渲染行为由客户端 mixin 提供。
+- Mod can receive configurations from remote server, and merge apply `NewLineBreak` options.
+- 模组可以接收来自远程服务器的配置，并合并应用 `NewLineBreak` 选项。
 
 ## Develop / 开发
 > This part is written by Chinese Simplified firstly.
