@@ -134,14 +134,56 @@ public final class BetterActionBarConfig {
         return new BetterActionBarConfig(lineSpacingMultiplier, newLineBreaks);
     }
 
-    private static BetterActionBarConfig defaultConfig() {
-        return new BetterActionBarConfig(
-            DEFAULT_LINE_SPACING_MULTIPLIER,
-            new ArrayList<>(DEFAULT_NEW_LINE_BREAKS)
+    public static void applyRemoteConfig(JsonObject config) {
+        float lineSpacingMultiplier = instance.lineSpacingMultiplier;
+        List<String> newLineBreaks = new ArrayList<>(instance.newLineBreaks);
+
+        JsonElement lineSpacingElement = getMemberIgnoreCase(
+            config,
+            "LineSpacingMultiplier"
+        );
+        if (lineSpacingElement != null) {
+            try {
+                lineSpacingMultiplier = lineSpacingElement.getAsFloat();
+            } catch (RuntimeException ignored) {}
+        }
+
+        JsonElement newLineBreakElement = getMemberIgnoreCase(
+            config,
+            "NewLineBreak"
+        );
+        if (newLineBreakElement != null) {
+            if (newLineBreakElement.isJsonArray()) {
+                for (
+                    JsonElement element :
+                    newLineBreakElement.getAsJsonArray()
+                ) {
+                    addNewLineBreak(newLineBreaks, element);
+                }
+            } else {
+                addNewLineBreak(newLineBreaks, newLineBreakElement);
+            }
+        }
+
+        instance = new BetterActionBarConfig(
+            lineSpacingMultiplier,
+            newLineBreaks
         );
     }
 
-    private static JsonElement getMemberIgnoreCase(
+    private static void addNewLineBreak(
+        List<String> newLineBreaks,
+        JsonElement element
+    ) {
+        if (element != null && element.isJsonPrimitive()) {
+            String value = element.getAsString();
+            if (!value.isEmpty() && !newLineBreaks.contains(value)) {
+                newLineBreaks.add(value);
+            }
+        }
+    }
+
+    static JsonElement getMemberIgnoreCase(
         JsonObject jsonObject,
         String key
     ) {
@@ -156,6 +198,13 @@ public final class BetterActionBarConfig {
         }
 
         return null;
+    }
+
+    private static BetterActionBarConfig defaultConfig() {
+        return new BetterActionBarConfig(
+            DEFAULT_LINE_SPACING_MULTIPLIER,
+            new ArrayList<>(DEFAULT_NEW_LINE_BREAKS)
+        );
     }
 
     private static void write(Path configFile, BetterActionBarConfig config) {

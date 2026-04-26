@@ -5,6 +5,7 @@
   "refmap": "betteractionbar.client.mixins.refmap.json",
   "client": [
     "ActionBarNewlineMixin",
+    "ChatMessageMixin",
     "AccessibilityOptionsScreenMixin",
     "OptionsSubScreenAccessor",
     "AccessibilityOptionsScreenInvoker"
